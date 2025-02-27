@@ -47,6 +47,10 @@
 
 #endif // icu
 
+#ifdef Q_OS_WIN
+#  include <qt_windows.h>
+#endif
+
 #include <mutex>
 
 #include <stdlib.h>
@@ -166,7 +170,11 @@ static QTextCodec *setupLocaleMapper()
 #if defined(QT_LOCALE_IS_UTF8)
     locale = QTextCodec::codecForName("UTF-8");
 #elif defined(Q_OS_WIN)
-    locale = QTextCodec::codecForName("System");
+    if (GetACP() == CP_UTF8) {
+        locale = QTextCodec::codecForName("UTF-8");
+    } else {
+        locale = QTextCodec::codecForName("System");
+    }
 #else
 
     // First try getting the codecs name from nl_langinfo and see
@@ -286,7 +294,9 @@ static void setup()
     (void) new QIconvCodec;
 #endif
 #if defined(Q_OS_WIN32)
-    (void) new QWindowsLocalCodec;
+    if (GetACP() != CP_UTF8) {
+        (void) new QWindowsLocalCodec;
+    }
 #endif // Q_OS_WIN32
 #endif // codecs
 
